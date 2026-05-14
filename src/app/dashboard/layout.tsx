@@ -1,10 +1,32 @@
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { UserMenu } from "@/components/layout/UserMenu";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const userName =
+    user.profile?.full_name ??
+    user.user_metadata?.full_name ??
+    user.email ??
+    "Pengguna";
+  const userRole = user.role;
+  const initials = userName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
     <div className="flex h-screen bg-cream-50">
       <Sidebar />
@@ -27,15 +49,18 @@ export default function DashboardLayout({
               </svg>
               <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
             </button>
-            {/* User avatar */}
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-sm font-semibold text-primary-700">
-                AS
-              </div>
-              <span className="hidden text-sm font-medium text-gray-700 sm:block">
-                Ahmad Santri
-              </span>
-            </div>
+
+            {/* Role badge */}
+            <span className="hidden rounded-full bg-primary-50 px-2.5 py-0.5 text-xs font-medium text-primary-700 sm:inline-flex">
+              {userRole}
+            </span>
+
+            {/* User menu */}
+            <UserMenu
+              userName={userName}
+              userRole={userRole}
+              userInitials={initials}
+            />
           </div>
         </header>
 
