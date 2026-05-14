@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/Card";
+import { getCurrentUser } from "@/lib/auth";
 
 const stats = [
   {
@@ -85,13 +86,18 @@ const schedule = [
   { time: "15:30", subject: "Hadits Arbain", location: "Kelas A1" },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const user = await getCurrentUser();
+  const firstName =
+    (user?.profile?.full_name ?? user?.user_metadata?.full_name ?? "Pengguna")
+      .split(" ")[0];
+
   return (
     <div className="space-y-6">
       {/* Welcome */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900">
-          Assalamualaikum, Ahmad! 👋
+          Assalamualaikum, {firstName}!
         </h2>
         <p className="mt-1 text-gray-500">
           Berikut ringkasan aktivitas belajar Anda hari ini.

@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/icons/Logo";
 import { DASHBOARD_NAV } from "@/lib/constants";
+import { createClient } from "@/lib/supabase/client";
 
 const iconMap: Record<string, React.ReactNode> = {
   home: (
@@ -44,7 +45,15 @@ const iconMap: Record<string, React.ReactNode> = {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <>
@@ -117,9 +126,10 @@ export function Sidebar() {
         </nav>
 
         <div className="border-t border-cream-200 p-3">
-          <Link
-            href="/"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-600"
             title={collapsed ? "Keluar" : undefined}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -128,7 +138,7 @@ export function Sidebar() {
               <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
             {!collapsed && <span>Keluar</span>}
-          </Link>
+          </button>
         </div>
       </aside>
     </>

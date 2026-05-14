@@ -1,16 +1,48 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { Suspense, useState, useTransition } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Logo } from "@/components/icons/Logo";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { signIn, signUp, signInWithGoogle } from "./actions";
 
 export default function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true);
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  );
+}
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+function LoginContent() {
+  const [isLogin, setIsLogin] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const searchParams = useSearchParams();
+  const authError = searchParams.get("error");
+
+  function handleSubmit(formData: FormData) {
+    setError(null);
+    startTransition(async () => {
+      const result = isLogin
+        ? await signIn(formData)
+        : await signUp(formData);
+      if (result?.error) {
+        setError(result.error);
+      }
+    });
+  }
+
+  function handleGoogleSignIn() {
+    setError(null);
+    startTransition(async () => {
+      const result = await signInWithGoogle();
+      if (result?.error) {
+        setError(result.error);
+      }
+    });
   }
 
   return (
@@ -22,7 +54,6 @@ export default function LoginPage() {
         <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-60 w-60 rounded-full bg-primary-400/20 blur-3xl" />
 
         <div className="relative flex h-full flex-col items-center justify-center px-12 text-center">
-          {/* Decorative arch */}
           <div className="mb-8 h-24 w-48 rounded-t-full border-2 border-white/20" />
 
           <h2 className="text-3xl font-bold text-white">
@@ -65,10 +96,17 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          {(error || authError) && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {error || "Terjadi kesalahan saat autentikasi. Silakan coba lagi."}
+            </div>
+          )}
+
+          <form action={handleSubmit} className="space-y-5">
             {!isLogin && (
               <Input
                 label="Nama Lengkap"
+                name="full_name"
                 type="text"
                 placeholder="Masukkan nama lengkap"
                 required
@@ -77,6 +115,7 @@ export default function LoginPage() {
 
             <Input
               label="Email"
+              name="email"
               type="email"
               placeholder="nama@pesantren.id"
               required
@@ -84,8 +123,10 @@ export default function LoginPage() {
 
             <Input
               label="Kata Sandi"
+              name="password"
               type="password"
               placeholder="Masukkan kata sandi"
+              minLength={6}
               required
             />
 
@@ -107,11 +148,9 @@ export default function LoginPage() {
               </div>
             )}
 
-            <Link href="/dashboard">
-              <Button type="submit" className="w-full">
-                {isLogin ? "Masuk" : "Daftar"}
-              </Button>
-            </Link>
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? "Memproses..." : isLogin ? "Masuk" : "Daftar"}
+            </Button>
           </form>
 
           <div className="mt-6">
@@ -126,7 +165,9 @@ export default function LoginPage() {
 
             <button
               type="button"
-              className="mt-4 flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+              onClick={handleGoogleSignIn}
+              disabled={isPending}
+              className="mt-4 flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg width="20" height="20" viewBox="0 0 24 24">
                 <path
@@ -154,11 +195,23 @@ export default function LoginPage() {
             {isLogin ? "Belum punya akun?" : "Sudah punya akun?"}{" "}
             <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError(null);
+              }}
               className="font-semibold text-primary-600 hover:text-primary-700"
             >
               {isLogin ? "Daftar sekarang" : "Masuk di sini"}
             </button>
+          </p>
+
+          <p className="mt-4 text-center">
+            <Link
+              href="/"
+              className="text-sm text-gray-400 hover:text-gray-600"
+            >
+              &larr; Kembali ke beranda
+            </Link>
           </p>
         </div>
       </div>
